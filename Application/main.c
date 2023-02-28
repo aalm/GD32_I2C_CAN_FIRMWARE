@@ -10,6 +10,7 @@
 
 #include "i2c.h"
 #include "can.h"
+#include "systick.h"
 #include "dual_dfs.h"
 
 #if DEBUG /* XXX idk about this... */
@@ -323,7 +324,7 @@ main(void)
 	unsigned char dtaSendToRP2040[100] = {0};
 
 	while(1) {
-		i2c_loop(&i2cDtaFromRP2040, &dtaSendToRP2040);
+		i2c_loop(&i2cDtaFromRP2040[0], &dtaSendToRP2040[0]);
 
 		/* ISR set FIFO not empty flag for CAN0. Buffer the message data. */
 		if (flgCAN0Get) {
