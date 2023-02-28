@@ -45,16 +45,16 @@ volatile static uint32_t delay;
     \param[out] none
     \retval     none
 */
-void systick_config(void)
+void
+systick_config(void)
 {
-    /* setup systick timer for 1000Hz interrupts */
-    if (SysTick_Config(SystemCoreClock / 1000U)){
-        /* capture error */
-        while (1){
-        }
-    }
-    /* configure the systick handler priority */
-    NVIC_SetPriority(SysTick_IRQn, 0x00U);
+	/* setup systick timer for 1000Hz interrupts */
+	if (SysTick_Config(SystemCoreClock / 1000U)){
+		while (1)	/* capture error */
+			continue;
+	}
+	/* configure the systick handler priority */
+	NVIC_SetPriority(SysTick_IRQn, 0x00U);
 }
 
 /*!
@@ -63,12 +63,12 @@ void systick_config(void)
     \param[out] none
     \retval     none
 */
-void delay_1ms(uint32_t count)
+void
+delay_1ms(uint32_t count)
 {
-    delay = count;
-
-    while(0U != delay){
-    }
+	delay = count;
+	while (0U != delay)
+		continue;
 }
 
 /*!
@@ -77,11 +77,9 @@ void delay_1ms(uint32_t count)
     \param[out] none
     \retval     none
 */
-extern unsigned long cnt_millis;
-void delay_decrement(void)
+void
+delay_decrement(void)
 {
-    if (0U != delay){
-        delay--;
-    }
-		cnt_millis++;
+	if (0U != delay)
+		delay--;
 }

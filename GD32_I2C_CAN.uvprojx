@@ -439,11 +439,6 @@
               <FileType>1</FileType>
               <FilePath>.\GD32C10x-Peripherals\systick.c</FilePath>
             </File>
-            <File>
-              <FileName>lgi_basic.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\GD32C10x-Peripherals\lgi_basic.c</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>

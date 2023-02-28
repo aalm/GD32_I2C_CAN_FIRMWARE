@@ -10,8 +10,11 @@
 
 #include "i2c.h"
 #include "can.h"
-#include "lgi_basic.h"
 #include "dual_dfs.h"
+
+#if DEBUG /* XXX idk about this... */
+#define CANFW_DBG
+#endif
 
 int flgCAN0Get = 0;
 int flgCAN1Get = 0;
@@ -258,22 +261,53 @@ void CANX_Send_From_I2C(uint32_t can_periph, unsigned char *str)
 /* XXX just working out the indentation to make main() more readable for now. */
 void i2c_loop(unsigned char *, unsigned char *);
 
+void
+setup_serial(void)
+{
+#ifdef CANFW_DBG
+	nvic_irq_enable(USART0_IRQn, 2, 2);
+
+	/* enable GPIO clock */
+	rcu_periph_clock_enable(RCU_GPIOA);
+
+	/* enable USART clock */
+	rcu_periph_clock_enable(RCU_USART0);
+
+	/* connect port to USARTx_Tx */
+	gpio_init(GPIOA, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_9);
+	/* connect port to USARTx_Rx */
+	gpio_init(GPIOA, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_50MHZ, GPIO_PIN_10);
+
+	/* USART configure */
+	usart_deinit(USART0);
+	usart_baudrate_set(USART0, 115200U);
+	usart_receive_config(USART0, USART_RECEIVE_ENABLE);
+	usart_transmit_config(USART0, USART_TRANSMIT_ENABLE);
+	usart_enable(USART0);
+
+	usart_interrupt_enable(USART0, USART_INT_RBNE);
+#endif
+}
+
 int
 main(void)
 {
 	/* configure board */
 	systick_config();
-	LGI_Init();
 
-#if DEBUG
-	Serial_begin();
-#endif
+	/* activate GPIO clocks */
+	rcu_periph_clock_enable(RCU_GPIOA);
+	rcu_periph_clock_enable(RCU_GPIOB);
+	rcu_periph_clock_enable(RCU_GPIOC);
+	rcu_periph_clock_enable(RCU_GPIOD);
+
+	setup_serial();
 
 	/* I2C configure */
 	i2c_gpio_config();
 	i2c_config();
 
-#if DEBUG
+#ifdef CANFW_DBG
 	printf("\r\nI2C0 initialized.");
 	printf("\r\nThe speed is %d MHz.", I2C_SPEED / 1000);
 #endif
@@ -440,7 +474,7 @@ i2c_loop(unsigned char *i2cDtaFromRP2040, unsigned char *dtaSendToRP2040)
 }
 
 #if 0
-#if DEBUG
+#ifdef CANFW_DBG
 /* retarget the C library printf function to the usart */
 int fputc(int ch, FILE *f)
 {
