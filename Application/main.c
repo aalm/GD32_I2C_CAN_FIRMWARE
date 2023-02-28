@@ -255,6 +255,8 @@ void CANX_Send_From_I2C(uint32_t can_periph, unsigned char *str)
     can_message_transmit(can_periph, &g_transmit_message);
 }
 
+/* XXX just working out the indentation to make main() more readable for now. */
+void i2c_loop(unsigned char *, unsigned char *);
 
 int
 main(void)
@@ -283,138 +285,11 @@ main(void)
 	can_struct_para_init(CAN_RX_MESSAGE_STRUCT, &g_receive_message0);
 	can_struct_para_init(CAN_RX_MESSAGE_STRUCT, &g_receive_message1);
 
-	int i = 0;
 	unsigned char i2cDtaFromRP2040[CANCONFIG_SIZE];
 	unsigned char dtaSendToRP2040[100] = {0};
 
 	while(1) {
-		int len = geti2cDta(i2cDtaFromRP2040);
-		if (len > 0) {
-			switch(i2cDtaFromRP2040[0]) {	/* CAN data functions */
-			case CAN0_SEND_MSG:
-				CANX_Send_From_I2C(CAN0, i2cDtaFromRP2040);
-				break;
-			case CAN1_SEND_MSG:
-				CANX_Send_From_I2C(CAN1, i2cDtaFromRP2040);
-				break;
-			case CAN0_MSG_RECV_NUM:
-				dtaSendToRP2040[0] = CAN0_NUM_BUFF_MSGS;
-				sendi2cDta(dtaSendToRP2040, 1);
-				break;
-			case CAN1_MSG_RECV_NUM:
-				dtaSendToRP2040[0] = CAN1_NUM_BUFF_MSGS;
-				sendi2cDta(dtaSendToRP2040, 1);
-				break;
-			case CAN0_RECV_INFO:
-				if (CAN0_NUM_BUFF_MSGS > 0) {
-					for (i = 0; i < 8; i++) {
-						dtaSendToRP2040[i] = CAN0_DATA_BUFFER[can0_buffer_index][i];
-					}
-					sendi2cDta(dtaSendToRP2040, 8);
-				}
-				break;
-			case REG_ADDR_RECV1:
-				if (CAN0_NUM_BUFF_MSGS > 0) {
-					if (CAN0_DATA_BUFFER[can0_buffer_index][7] <= 32) {
-						for (i = 0; i<CAN0_DATA_BUFFER[can0_buffer_index][7]; i++) {
-							dtaSendToRP2040[i] = CAN0_DATA_BUFFER[can0_buffer_index][8 + i];
-						}
-						sendi2cDta(dtaSendToRP2040, CAN0_DATA_BUFFER[can0_buffer_index][7]);
-						can0_buffer_index--;
-						if (can0_buffer_index < 0) {
-							can0_buffer_index = MAX_CAN_RECV - 1;
-						}
-						CAN0_NUM_BUFF_MSGS--;
-					} else {
-						for (i = 0; i < 32; i++) {
-							dtaSendToRP2040[i] = CAN0_DATA_BUFFER[can0_buffer_index][8 + i];
-						}
-						sendi2cDta(dtaSendToRP2040, 32);
-					}
-				}
-				break;
-			case REG_ADDR_RECV2:
-				if (CAN0_NUM_BUFF_MSGS && (CAN0_DATA_BUFFER[can0_buffer_index][7] > 32)) {
-					for (i = 0; i < (CAN0_DATA_BUFFER[can0_buffer_index][7] - 32); i++) {
-						dtaSendToRP2040[i] = CAN0_DATA_BUFFER[can0_buffer_index][40 + i];
-					}
-					sendi2cDta(dtaSendToRP2040, CAN0_DATA_BUFFER[can0_buffer_index][7] - 32);
-					can0_buffer_index--;
-					if (can0_buffer_index < 0) {
-						can0_buffer_index = MAX_CAN_RECV - 1;
-					}
-					CAN0_NUM_BUFF_MSGS--;
-				}
-				break;
-			case CAN1_RECV_INFO:
-				if (CAN1_NUM_BUFF_MSGS > 0) {
-					for(i = 0; i < 8; i++) {
-						dtaSendToRP2040[i] = CAN1_DATA_BUFFER[can1_buffer_index][i];
-					}
-					sendi2cDta(dtaSendToRP2040, 8);
-				}
-				break;
-			case REG1_ADDR_RECV1:
-				if (CAN1_NUM_BUFF_MSGS > 0) {
-					if (CAN1_DATA_BUFFER[can1_buffer_index][7] <= 32) {
-						for (i = 0; i<CAN1_DATA_BUFFER[can1_buffer_index][7]; i++) {
-							dtaSendToRP2040[i] = CAN1_DATA_BUFFER[can1_buffer_index][8 + i];
-						}
-						sendi2cDta(dtaSendToRP2040, CAN1_DATA_BUFFER[can1_buffer_index][7]);
-						can1_buffer_index--;
-						if (can1_buffer_index < 0) {
-							can1_buffer_index = MAX_CAN_RECV - 1;
-						}
-						CAN1_NUM_BUFF_MSGS--;
-					} else {
-						for (i = 0; i < 32; i++) {
-							dtaSendToRP2040[i] = CAN1_DATA_BUFFER[can1_buffer_index][8 + i];
-						}
-						sendi2cDta(dtaSendToRP2040, 32);
-					}
-				}
-				break;
-			case REG1_ADDR_RECV2:
-				if (CAN1_NUM_BUFF_MSGS && (CAN1_DATA_BUFFER[can1_buffer_index][7] > 32)) {
-					for (i = 0; i < (CAN1_DATA_BUFFER[can1_buffer_index][7] - 32); i++) {
-						dtaSendToRP2040[i] = CAN1_DATA_BUFFER[can1_buffer_index][40 + i];
-					}
-					sendi2cDta(dtaSendToRP2040, CAN1_DATA_BUFFER[can1_buffer_index][7] - 32);
-					can1_buffer_index--;
-					if (can1_buffer_index < 0) {
-						can1_buffer_index = MAX_CAN_RECV - 1;
-					}
-					CAN1_NUM_BUFF_MSGS--;
-				}
-				break;
-			/* CAN control functions */
-			case CAN0_CONFIG:
-				memcpy(can0config, &i2cDtaFromRP2040[1], CANCONFIG_SIZE);
-				can_param_config(CAN0, can0config);
-				/* If config was called more than once, buffers should be emptied. */
-				can0_buffer_index = CAN0_NUM_BUFF_MSGS = 0;
-				break;
-			case CAN1_CONFIG:
-				memcpy(can1config, &i2cDtaFromRP2040[1], CANCONFIG_SIZE);
-				can_param_config(CAN1, can1config);
-				can1_buffer_index = CAN1_NUM_BUFF_MSGS = 0;
-				break;
-			case CAN0_SLEEP:
-				can_sleep_mode(CAN0);
-				break;
-			case CAN1_SLEEP:
-				can_sleep_mode(CAN1);
-				break;
-			case CAN0_WAKE:
-				can_awake(CAN0);
-				break;
-			case CAN1_WAKE:
-				can_awake(CAN1);
-				break;
-			default:
-				break;
-			}
-		}
+		i2c_loop(&i2cDtaFromRP2040, &dtaSendToRP2040);
 
 		/* ISR set FIFO not empty flag for CAN0. Buffer the message data. */
 		if (flgCAN0Get) {
@@ -427,6 +302,143 @@ main(void)
 		}
 	}
 }
+
+void
+i2c_loop(unsigned char *i2cDtaFromRP2040, unsigned char *dtaSendToRP2040)
+{
+	int len = geti2cDta(i2cDtaFromRP2040);
+	int i;
+
+	if (len < 1)
+		return;
+
+	switch (i2cDtaFromRP2040[0]) {
+/* CAN data functions */
+	case CAN0_SEND_MSG:
+		CANX_Send_From_I2C(CAN0, i2cDtaFromRP2040);
+		break;
+	case CAN1_SEND_MSG:
+		CANX_Send_From_I2C(CAN1, i2cDtaFromRP2040);
+		break;
+	case CAN0_MSG_RECV_NUM:
+		dtaSendToRP2040[0] = CAN0_NUM_BUFF_MSGS;
+		sendi2cDta(dtaSendToRP2040, 1);
+		break;
+	case CAN1_MSG_RECV_NUM:
+		dtaSendToRP2040[0] = CAN1_NUM_BUFF_MSGS;
+		sendi2cDta(dtaSendToRP2040, 1);
+		break;
+	case CAN0_RECV_INFO:
+		if (CAN0_NUM_BUFF_MSGS > 0) {
+			for (i = 0; i < 8; i++) {
+				dtaSendToRP2040[i] = CAN0_DATA_BUFFER[can0_buffer_index][i];
+			}
+			sendi2cDta(dtaSendToRP2040, 8);
+		}
+		break;
+	case REG_ADDR_RECV1:
+		if (CAN0_NUM_BUFF_MSGS > 0) {
+			if (CAN0_DATA_BUFFER[can0_buffer_index][7] <= 32) {
+				for (i = 0; i<CAN0_DATA_BUFFER[can0_buffer_index][7]; i++) {
+					dtaSendToRP2040[i] = CAN0_DATA_BUFFER[can0_buffer_index][8 + i];
+				}
+				sendi2cDta(dtaSendToRP2040, CAN0_DATA_BUFFER[can0_buffer_index][7]);
+				can0_buffer_index--;
+				if (can0_buffer_index < 0) {
+					can0_buffer_index = MAX_CAN_RECV - 1;
+				}
+				CAN0_NUM_BUFF_MSGS--;
+			} else {
+				for (i = 0; i < 32; i++) {
+					dtaSendToRP2040[i] = CAN0_DATA_BUFFER[can0_buffer_index][8 + i];
+				}
+				sendi2cDta(dtaSendToRP2040, 32);
+			}
+		}
+		break;
+	case REG_ADDR_RECV2:
+		if (CAN0_NUM_BUFF_MSGS && (CAN0_DATA_BUFFER[can0_buffer_index][7] > 32)) {
+			for (i = 0; i < (CAN0_DATA_BUFFER[can0_buffer_index][7] - 32); i++) {
+				dtaSendToRP2040[i] = CAN0_DATA_BUFFER[can0_buffer_index][40 + i];
+			}
+			sendi2cDta(dtaSendToRP2040, CAN0_DATA_BUFFER[can0_buffer_index][7] - 32);
+			can0_buffer_index--;
+			if (can0_buffer_index < 0) {
+				can0_buffer_index = MAX_CAN_RECV - 1;
+			}
+			CAN0_NUM_BUFF_MSGS--;
+		}
+		break;
+	case CAN1_RECV_INFO:
+		if (CAN1_NUM_BUFF_MSGS > 0) {
+			for(i = 0; i < 8; i++) {
+				dtaSendToRP2040[i] = CAN1_DATA_BUFFER[can1_buffer_index][i];
+			}
+			sendi2cDta(dtaSendToRP2040, 8);
+		}
+		break;
+	case REG1_ADDR_RECV1:
+		if (CAN1_NUM_BUFF_MSGS > 0) {
+			if (CAN1_DATA_BUFFER[can1_buffer_index][7] <= 32) {
+				for (i = 0; i<CAN1_DATA_BUFFER[can1_buffer_index][7]; i++) {
+					dtaSendToRP2040[i] = CAN1_DATA_BUFFER[can1_buffer_index][8 + i];
+				}
+				sendi2cDta(dtaSendToRP2040, CAN1_DATA_BUFFER[can1_buffer_index][7]);
+				can1_buffer_index--;
+				if (can1_buffer_index < 0) {
+					can1_buffer_index = MAX_CAN_RECV - 1;
+				}
+				CAN1_NUM_BUFF_MSGS--;
+			} else {
+				for (i = 0; i < 32; i++) {
+					dtaSendToRP2040[i] = CAN1_DATA_BUFFER[can1_buffer_index][8 + i];
+				}
+				sendi2cDta(dtaSendToRP2040, 32);
+			}
+		}
+		break;
+	case REG1_ADDR_RECV2:
+		if (CAN1_NUM_BUFF_MSGS && (CAN1_DATA_BUFFER[can1_buffer_index][7] > 32)) {
+			for (i = 0; i < (CAN1_DATA_BUFFER[can1_buffer_index][7] - 32); i++) {
+				dtaSendToRP2040[i] = CAN1_DATA_BUFFER[can1_buffer_index][40 + i];
+			}
+			sendi2cDta(dtaSendToRP2040, CAN1_DATA_BUFFER[can1_buffer_index][7] - 32);
+			can1_buffer_index--;
+			if (can1_buffer_index < 0) {
+				can1_buffer_index = MAX_CAN_RECV - 1;
+			}
+			CAN1_NUM_BUFF_MSGS--;
+		}
+		break;
+/* CAN control functions */
+	case CAN0_CONFIG:
+		memcpy(can0config, &i2cDtaFromRP2040[1], CANCONFIG_SIZE);
+		can_param_config(CAN0, can0config);
+		/* If config was called more than once, buffers should be emptied. */
+		can0_buffer_index = CAN0_NUM_BUFF_MSGS = 0;
+		break;
+	case CAN1_CONFIG:
+		memcpy(can1config, &i2cDtaFromRP2040[1], CANCONFIG_SIZE);
+		can_param_config(CAN1, can1config);
+		can1_buffer_index = CAN1_NUM_BUFF_MSGS = 0;
+		break;
+	case CAN0_SLEEP:
+		can_sleep_mode(CAN0);
+		break;
+	case CAN1_SLEEP:
+		can_sleep_mode(CAN1);
+		break;
+	case CAN0_WAKE:
+		can_awake(CAN0);
+		break;
+	case CAN1_WAKE:
+		can_awake(CAN1);
+		break;
+	default:
+		break;
+	}
+}
+
 #if 0
 #if DEBUG
 /* retarget the C library printf function to the usart */
