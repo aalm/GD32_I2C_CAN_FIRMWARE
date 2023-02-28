@@ -101,11 +101,30 @@ int digitalRead(int pin)
 // ----------------------------------------------------------
 // --------------------------SERIAL--------------------------
 // ----------------------------------------------------------
-void Serial_begin()      																																												// USART 0
+void
+Serial_begin(void)
 {
-    nvic_irq_enable(USART0_IRQn, 2, 2);
-    gd_eval_com_init(EVAL_COM0);
-    usart_interrupt_enable(USART0, USART_INT_RBNE);
+	nvic_irq_enable(USART0_IRQn, 2, 2);
+
+	/* enable GPIO clock */
+	rcu_periph_clock_enable(RCU_GPIOA);
+
+	/* enable USART clock */
+	rcu_periph_clock_enable(RCU_USART0);
+
+	/* connect port to USARTx_Tx */
+	gpio_init(GPIOA, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_9);
+	/* connect port to USARTx_Rx */
+	gpio_init(GPIOA, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_50MHZ, GPIO_PIN_10);
+
+	/* USART configure */
+	usart_deinit(USART0);
+	usart_baudrate_set(USART0, 115200U);
+	usart_receive_config(USART0, USART_RECEIVE_ENABLE);
+	usart_transmit_config(USART0, USART_TRANSMIT_ENABLE);
+	usart_enable(USART0);
+
+	usart_interrupt_enable(USART0, USART_INT_RBNE);
 }
 
 int Serial_available(void)

@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>GD32C10X_MD, __FPU_PRESENT</Define>
               <Undefine></Undefine>
-              <IncludePath>.\CMSIS;.\GD32C10x-Firmware\Include;.\Application;.\CMSIS\GD\GD32C10x\Include;.\GD32C10x-Peripherals;.\GD32C10x-EVAL</IncludePath>
+              <IncludePath>.\CMSIS;.\GD32C10x-Firmware\Include;.\Application;.\CMSIS\GD\GD32C10x\Include;.\GD32C10x-Peripherals</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -418,16 +418,6 @@
               <FileName>Readme.txt</FileName>
               <FileType>5</FileType>
               <FilePath>.\Docs\Readme.txt</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>GD32C10x-EVAL</GroupName>
-          <Files>
-            <File>
-              <FileName>gd32c10x_eval.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\GD32C10x-EVAL\gd32c10x_eval.c</FilePath>
             </File>
           </Files>
         </Group>

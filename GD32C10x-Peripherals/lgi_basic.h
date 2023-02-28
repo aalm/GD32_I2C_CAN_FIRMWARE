@@ -5,7 +5,6 @@
 #include "gd32c10x.h"
 #include <stdio.h>
 #include "systick.h"
-#include "gd32c10x_eval.h"
 
 #define PA0     0
 #define PA1     1
@@ -104,4 +103,3 @@ void Serial_println(char *s);
 //
 
 #endif
-// END FILE
