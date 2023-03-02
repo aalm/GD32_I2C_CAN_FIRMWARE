@@ -128,20 +128,8 @@ geti2cDta(uint8_t *dta)
 
 	i2c_flag_clear(I2C0, I2C_FLAG_ADDSEND);
 
-#if DEBUG
-	while (!i2c_flag_get(I2C0, I2C_FLAG_RBNE)) {
-		__NOP();
-		tout++;
-		if (tout > 5000) {
-			//i2c_config();
-			//i2c_flag_clear(I2C0, I2C_FLAG_RBNE);
-			return 0;
-		}
-	}
-#else
 	while (!i2c_flag_get(I2C0, I2C_FLAG_RBNE))
 		continue;
-#endif
 	tout = 0;
 
 	while (i2c_flag_get(I2C0, I2C_FLAG_RBNE)) {
@@ -150,26 +138,15 @@ geti2cDta(uint8_t *dta)
 			__NOP();
 		}
 
-		if (len > 73) {
+		if (len > 73) { /* XXX ??? */
 			//i2c_flag_clear(I2C0, I2C_FLAG_RBNE);
 			return 0;
 		}
 	}
 
-#if DEBUG
-	while (!i2c_flag_get(I2C0, I2C_FLAG_STPDET)) {
-		__NOP();
-		tout++;
-		if (tout > 5000) {
-			//i2c_config();
-			//i2c_flag_clear(I2C0, I2C_FLAG_STPDET);
-			return 0;
-		}
-	}
-#else
 	while (!i2c_flag_get(I2C0, I2C_FLAG_STPDET))
 		continue;
-#endif
+
 	i2c_enable(I2C0);
 	return len;
 }
@@ -180,7 +157,6 @@ sendi2cDta(uint8_t *dta, int dlen)
 {
 	uint32_t tout = 0;
 	/* wait until ADDSEND bit is set */
-	//if(!i2c_flag_get(I2C0, I2C_FLAG_ADDSEND))return 0;
 	while (!i2c_flag_get(I2C0, I2C_FLAG_ADDSEND)) {
 		__NOP();
 		tout++;
@@ -191,7 +167,7 @@ sendi2cDta(uint8_t *dta, int dlen)
 		}
 	}
 	tout = 0;
-	//if(!i2c_flag_get(I2C0, I2C_FLAG_ADDSEND))return 0;
+
 	/* clear ADDSEND bit */
 	i2c_flag_clear(I2C0, I2C_FLAG_ADDSEND);
 
@@ -294,6 +270,8 @@ setup_serial(void)
 #endif
 }
 
+static uint8_t dbgpingpong = 0;
+
 int
 main(void)
 {
@@ -308,21 +286,21 @@ main(void)
 
 	setup_serial();
 
-	/* I2C configure */
-	i2c_gpio_config();
-	i2c_config();
-
-#ifdef CANFW_DBG
-	printf("\r\nI2C0 initialized.");
-	printf("\r\nThe speed is %d MHz.", I2C_SPEED / 1000);
-#endif
-
 	/* CAN configure */
 	can_gpio_config();
 
 	/* initialize receive message */
 	can_struct_para_init(CAN_RX_MESSAGE_STRUCT, &g_receive_message0);
 	can_struct_para_init(CAN_RX_MESSAGE_STRUCT, &g_receive_message1);
+
+	/* I2C configure */
+	i2c_gpio_config();
+	i2c_config();
+
+#ifdef CANFW_DBG
+	printf("I2C0 initialized @ %d MHz.\n", I2C_SPEED / 1000);
+#endif
+
 
 	uint8_t i2cDtaFromRP2040[CANCONFIG_SIZE];
 	uint8_t dtaSendToRP2040[100] = {0};
@@ -338,6 +316,13 @@ main(void)
 		if (flgCAN1Get) {
 			flgCAN1Get = 0;
 			canSaveData(CAN1);
+		}
+		if (dbgpingpong) {
+			dbgpingpong++;
+			if (sendi2cDta(&dbgpingpong, 1) == 1) {
+				dbgpingpong = 0;
+			} else
+				dbgpingpong--;
 		}
 	}
 }
@@ -473,12 +458,15 @@ i2c_loop(uint8_t *i2cDtaFromRP2040, uint8_t *dtaSendToRP2040)
 	case CAN1_WAKE:
 		can_working_mode_set(CAN1, CAN_MODE_SLEEP);
 		break;
+	case DBG_PINGPONG:
+		dbgpingpong = i2cDtaFromRP2040[1];
+		break;
 	default:
 		break;
 	}
 }
 
-#if 0
+#if /* XXX */0
 #ifdef CANFW_DBG
 /* retarget the C library printf function to the usart */
 int fputc(int ch, FILE *f)
