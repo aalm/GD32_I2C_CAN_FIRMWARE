@@ -165,4 +165,3 @@ void CAN1_RX0_IRQHandler(void)
     can_message_receive(CAN1, CAN_FIFO0, &g_receive_message1);
 		flgCAN1Get = 1;
 }
-

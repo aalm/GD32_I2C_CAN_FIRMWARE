@@ -7,9 +7,6 @@
 #ifndef CAN_H
 #define CAN_H
 
-#include "gd32c10x.h"
-
-
 #define CAN0_RX_PORT            GPIOA
 #define CAN0_TX_PORT            GPIOA
 #define CAN0_RX_PIN             GPIO_PIN_11
@@ -25,14 +22,6 @@
 void can_gpio_config(void);
 
 /* configure the CAN0/1 speed and parameters */
-void can_param_config(uint32_t can_periph, unsigned char *str);
-
-/* Put CAN0/1 in sleep mode */
-void can_sleep_mode(uint32_t can_periph);
-
-/* Wake CAN0/1 from sleep mode */
-void can_awake(uint32_t can_periph);
-
-unsigned long char2long(unsigned char *str);
+void can_param_config(uint32_t can_periph, uint8_t *str);
 
 #endif /* CAN_H */

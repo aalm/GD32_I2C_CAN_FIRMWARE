@@ -35,10 +35,8 @@ OF SUCH DAMAGE.
 #ifndef I2C_H
 #define I2C_H
 
-#include "gd32c10x.h"
-
-#define I2CX_SLAVE_ADDRESS7     0x41																																															// GD32's address. Match with CANBED library
-#define I2C_SPEED               1000000																																														// Fast mode plus
+#define I2CX_SLAVE_ADDRESS7     0x41        /* GD32's address. Match with CANBED library */
+#define I2C_SPEED               1000000     /* Fast mode plus */
 #define I2C_PAGE_SIZE           8
 #define I2CX                    I2C0
 #define RCU_GPIO_I2C            RCU_GPIOB
@@ -54,6 +52,6 @@ void i2c_gpio_config(void);
 /* configure the I2CX interface */
 void i2c_config(void);
 /* reset I2C bus */
-void i2c_bus_reset(void);
+void i2c_bus_reset(void);   /* XXX unused */
 
 #endif /* I2C_H */

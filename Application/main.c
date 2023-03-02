@@ -4,8 +4,10 @@
 
 */
 
-#include <string.h>
 #include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+
 #include "gd32c10x.h"
 
 #include "i2c.h"
@@ -26,241 +28,243 @@ int CAN1_NUM_BUFF_MSGS = 0;
 int can0_buffer_index = 0;
 int can1_buffer_index = 0;
 
-unsigned char CAN0_DATA_BUFFER[MAX_CAN_RECV][100];
-unsigned char CAN1_DATA_BUFFER[MAX_CAN_RECV][100];
+uint8_t CAN0_DATA_BUFFER[MAX_CAN_RECV][100];
+uint8_t CAN1_DATA_BUFFER[MAX_CAN_RECV][100];
 
-unsigned char can0config[CANCONFIG_SIZE];
-unsigned char can1config[CANCONFIG_SIZE];
+uint8_t can0config[CANCONFIG_SIZE];
+uint8_t can1config[CANCONFIG_SIZE];
 
 can_receive_message_struct g_receive_message0;
 can_receive_message_struct g_receive_message1;
 can_trasnmit_message_struct g_transmit_message;
 
-
-void long2char(unsigned long __t, unsigned char *str)
+void
+long2char(uint32_t __t, uint8_t *str)
 {
-    str[0] = (__t >> 24) & 0xff;
-    str[1] = (__t >> 16) & 0xff;
-    str[2] = (__t >> 8) & 0xff;
-    str[3] = (__t >> 0) & 0xff;
+	str[0] = (__t >> 24) & 0xff;
+	str[1] = (__t >> 16) & 0xff;
+	str[2] = (__t >> 8) & 0xff;
+	str[3] = (__t >> 0) & 0xff;
 }
 
-
-void canSaveData(uint32_t can_periph)
+void
+canSaveData(uint32_t can_periph)
 {
-    unsigned long id = 0;
-	
-		if (CAN0 == can_periph) {
-				can0_buffer_index++;
-				if (can0_buffer_index > (MAX_CAN_RECV - 1)) {
-						can0_buffer_index = 0;
-				}
+	uint32_t id = 0;
 
-				if (g_receive_message0.rx_ff == CAN_FF_EXTENDED) {
-						id = g_receive_message0.rx_efid;
-						CAN0_DATA_BUFFER[can0_buffer_index][4] = 1;
-				}
-				else {
-						id = g_receive_message0.rx_sfid;
-						CAN0_DATA_BUFFER[can0_buffer_index][4] = 0;
-				}
-
-				long2char(id, &CAN0_DATA_BUFFER[can0_buffer_index][0]);
-
-				CAN0_DATA_BUFFER[can0_buffer_index][5] = (g_receive_message0.rx_ft == CAN_FT_REMOTE) ? 1 : 0;
-				CAN0_DATA_BUFFER[can0_buffer_index][7] = g_receive_message0.rx_dlen;
-
-				for (int i = 0; i < CAN0_DATA_BUFFER[can0_buffer_index][7]; i++) {
-						CAN0_DATA_BUFFER[can0_buffer_index][8 + i] = g_receive_message0.rx_data[i];
-				}
-
-				CAN0_NUM_BUFF_MSGS++;
-				if (CAN0_NUM_BUFF_MSGS > MAX_CAN_RECV) {
-#if DEBUG
-						printf("\r\nCAN0 message buffer is full. Oldest message will be overwritten.");
-#endif
-						CAN0_NUM_BUFF_MSGS = MAX_CAN_RECV;
-				}
-		} 
-		else {
-				can1_buffer_index++;
-				if (can1_buffer_index > (MAX_CAN_RECV - 1)) {
-						can1_buffer_index = 0;
-				}
-
-				if (g_receive_message1.rx_ff == CAN_FF_EXTENDED) {
-						id = g_receive_message1.rx_efid;
-						CAN1_DATA_BUFFER[can1_buffer_index][4] = 1;
-				}
-				else {
-						id = g_receive_message1.rx_sfid;
-						CAN1_DATA_BUFFER[can1_buffer_index][4] = 0;
-				}
-
-				long2char(id, &CAN1_DATA_BUFFER[can1_buffer_index][0]);
-
-				CAN1_DATA_BUFFER[can1_buffer_index][5] = (g_receive_message1.rx_ft == CAN_FT_REMOTE) ? 1 : 0;
-				CAN1_DATA_BUFFER[can1_buffer_index][7] = g_receive_message1.rx_dlen;
-
-				for (int i = 0; i < CAN1_DATA_BUFFER[can1_buffer_index][7]; i++) {
-						CAN1_DATA_BUFFER[can1_buffer_index][8 + i] = g_receive_message1.rx_data[i];
-				}
-
-				CAN1_NUM_BUFF_MSGS++;
-				if (CAN1_NUM_BUFF_MSGS > MAX_CAN_RECV) {
-#if DEBUG
-						printf("\r\nCAN1 message buffer is full. Oldest message will be overwritten.");
-#endif
-						CAN1_NUM_BUFF_MSGS = MAX_CAN_RECV;
-				}
-		}
-}
-
-
-int geti2cDta(unsigned char *dta)
-{
-    int len = 0;
-    unsigned long tout = 0;
-
-    if (!i2c_flag_get(I2C0, I2C_FLAG_ADDSEND)) {
-			return len;
+	if (CAN0 == can_periph) {
+		can0_buffer_index++;
+		if (can0_buffer_index > (MAX_CAN_RECV - 1)) {
+			can0_buffer_index = 0;
 		}
 
-    i2c_flag_clear(I2C0, I2C_FLAG_ADDSEND);
+		if (g_receive_message0.rx_ff == CAN_FF_EXTENDED) {
+			id = g_receive_message0.rx_efid;
+			CAN0_DATA_BUFFER[can0_buffer_index][4] = 1;
+		} else {
+			id = g_receive_message0.rx_sfid;
+			CAN0_DATA_BUFFER[can0_buffer_index][4] = 0;
+		}
 
+		long2char(id, &CAN0_DATA_BUFFER[can0_buffer_index][0]);
+
+		CAN0_DATA_BUFFER[can0_buffer_index][5] = (g_receive_message0.rx_ft == CAN_FT_REMOTE) ? 1 : 0;
+		CAN0_DATA_BUFFER[can0_buffer_index][7] = g_receive_message0.rx_dlen;
+
+		for (int i = 0; i < CAN0_DATA_BUFFER[can0_buffer_index][7]; i++) {
+			CAN0_DATA_BUFFER[can0_buffer_index][8 + i] = g_receive_message0.rx_data[i];
+		}
+
+		CAN0_NUM_BUFF_MSGS++;
+		if (CAN0_NUM_BUFF_MSGS > MAX_CAN_RECV) {
 #if DEBUG
-    while (!i2c_flag_get(I2C0, I2C_FLAG_RBNE)) {
-        __NOP();
-        tout++;
-        if (tout > 5000) {
-            //i2c_config();
-            //i2c_flag_clear(I2C0, I2C_FLAG_RBNE);
-            return 0;
-        }
-    }
-#else
-    while(!i2c_flag_get(I2C0, I2C_FLAG_RBNE));
+			printf("CAN0 message buffer is full.\n");
 #endif
-    tout = 0;
+			CAN0_NUM_BUFF_MSGS = MAX_CAN_RECV;
+		}
+	} else {
+		can1_buffer_index++;
+		if (can1_buffer_index > (MAX_CAN_RECV - 1)) {
+			can1_buffer_index = 0;
+		}
 
-    while (i2c_flag_get(I2C0, I2C_FLAG_RBNE)) {
-        dta[len++] = i2c_data_receive(I2C0);
-        for (int i = 0; i < 3000; i++) {
-					__NOP();
-				}
+		if (g_receive_message1.rx_ff == CAN_FF_EXTENDED) {
+			id = g_receive_message1.rx_efid;
+			CAN1_DATA_BUFFER[can1_buffer_index][4] = 1;
+		} else {
+			id = g_receive_message1.rx_sfid;
+			CAN1_DATA_BUFFER[can1_buffer_index][4] = 0;
+		}
 
-        if (len > 73) {
-            //i2c_flag_clear(I2C0, I2C_FLAG_RBNE);
-            return 0;
-        }
-    }
+		long2char(id, &CAN1_DATA_BUFFER[can1_buffer_index][0]);
 
+		CAN1_DATA_BUFFER[can1_buffer_index][5] = (g_receive_message1.rx_ft == CAN_FT_REMOTE) ? 1 : 0;
+		CAN1_DATA_BUFFER[can1_buffer_index][7] = g_receive_message1.rx_dlen;
+
+		for (int i = 0; i < CAN1_DATA_BUFFER[can1_buffer_index][7]; i++) {
+			CAN1_DATA_BUFFER[can1_buffer_index][8 + i] = g_receive_message1.rx_data[i];
+		}
+
+		CAN1_NUM_BUFF_MSGS++;
+		if (CAN1_NUM_BUFF_MSGS > MAX_CAN_RECV) {
 #if DEBUG
-    while (!i2c_flag_get(I2C0, I2C_FLAG_STPDET)) {
-        __NOP();
-        tout++;
-        if (tout > 5000) {
-            //i2c_config();
-            //i2c_flag_clear(I2C0, I2C_FLAG_STPDET);
-            return 0;
-        }
-    }
-#else
-    while(!i2c_flag_get(I2C0, I2C_FLAG_STPDET));
+			printf("CAN1 message buffer is full.\n");
 #endif
-    i2c_enable(I2C0);
-    return len;
+			CAN1_NUM_BUFF_MSGS = MAX_CAN_RECV;
+		}
+	}
 }
 
 
-int sendi2cDta(unsigned char *dta, int dlen)
+int
+geti2cDta(uint8_t *dta)
 {
-    unsigned long tout = 0;
-    /* wait until ADDSEND bit is set */
-    //if(!i2c_flag_get(I2C0, I2C_FLAG_ADDSEND))return 0;
-    while (!i2c_flag_get(I2C0, I2C_FLAG_ADDSEND)) {
-        __NOP();
-        tout++;
-        if (tout > 5000) {
-            //i2c_config();
-            i2c_flag_clear(I2C0, I2C_FLAG_ADDSEND);
-            return 0;
-        }
-    }
-    tout = 0;
-    //if(!i2c_flag_get(I2C0, I2C_FLAG_ADDSEND))return 0;
-    /* clear ADDSEND bit */
-    i2c_flag_clear(I2C0, I2C_FLAG_ADDSEND);
+	int len = 0;
+	uint32_t tout = 0;
 
-    /* wait until the transmission data register is empty */
-    while (!i2c_flag_get(I2C0, I2C_FLAG_TBE)) {
-        __NOP();
-        tout++;
-        if (tout > 5000) {
-            i2c_flag_clear(I2C0, I2C_FLAG_TBE);
-            return 0;
-        }
-    }
-    tout = 0;
+	if (!i2c_flag_get(I2C0, I2C_FLAG_ADDSEND)) {
+		return len;
+	}
 
-    for (int i = 0; i < dlen; i++) {
-        /* send a data byte */
-        i2c_data_transmit(I2C0, dta[i]);
-        /* wait until the transmission data register is empty */
-        while (!i2c_flag_get(I2C0, I2C_FLAG_TBE)) {
-            __NOP();
-            tout++;
-            if(tout > 5000) {
-                i2c_flag_clear(I2C0, I2C_FLAG_TBE);
-                return 0;
-            }
-        }
-        tout = 0;
-    }
-    /* the master doesn't acknowledge for the last byte */
-    while (!i2c_flag_get(I2C0, I2C_FLAG_AERR)) {
-        __NOP();
-        tout++;
-        if (tout > 5000) {
-            i2c_flag_clear(I2C0, I2C_FLAG_AERR);
-            return 0;
-        }
-    }
-    /* clear the bit of AERR */
-    i2c_flag_clear(I2C0, I2C_FLAG_AERR);
+	i2c_flag_clear(I2C0, I2C_FLAG_ADDSEND);
 
-    return dlen;
+#if DEBUG
+	while (!i2c_flag_get(I2C0, I2C_FLAG_RBNE)) {
+		__NOP();
+		tout++;
+		if (tout > 5000) {
+			//i2c_config();
+			//i2c_flag_clear(I2C0, I2C_FLAG_RBNE);
+			return 0;
+		}
+	}
+#else
+	while (!i2c_flag_get(I2C0, I2C_FLAG_RBNE))
+		continue;
+#endif
+	tout = 0;
+
+	while (i2c_flag_get(I2C0, I2C_FLAG_RBNE)) {
+		dta[len++] = i2c_data_receive(I2C0);
+		for (int i = 0; i < 3000; i++) {
+			__NOP();
+		}
+
+		if (len > 73) {
+			//i2c_flag_clear(I2C0, I2C_FLAG_RBNE);
+			return 0;
+		}
+	}
+
+#if DEBUG
+	while (!i2c_flag_get(I2C0, I2C_FLAG_STPDET)) {
+		__NOP();
+		tout++;
+		if (tout > 5000) {
+			//i2c_config();
+			//i2c_flag_clear(I2C0, I2C_FLAG_STPDET);
+			return 0;
+		}
+	}
+#else
+	while (!i2c_flag_get(I2C0, I2C_FLAG_STPDET))
+		continue;
+#endif
+	i2c_enable(I2C0);
+	return len;
 }
 
 
-void CANX_Send_From_I2C(uint32_t can_periph, unsigned char *str)
+int
+sendi2cDta(uint8_t *dta, int dlen)
 {
-    unsigned long id = 0;
+	uint32_t tout = 0;
+	/* wait until ADDSEND bit is set */
+	//if(!i2c_flag_get(I2C0, I2C_FLAG_ADDSEND))return 0;
+	while (!i2c_flag_get(I2C0, I2C_FLAG_ADDSEND)) {
+		__NOP();
+		tout++;
+		if (tout > 5000) {
+			//i2c_config();
+			i2c_flag_clear(I2C0, I2C_FLAG_ADDSEND);
+			return 0;
+		}
+	}
+	tout = 0;
+	//if(!i2c_flag_get(I2C0, I2C_FLAG_ADDSEND))return 0;
+	/* clear ADDSEND bit */
+	i2c_flag_clear(I2C0, I2C_FLAG_ADDSEND);
 
-    id |= str[1];
-    id <<= 8;
-    id |= str[2];
-    id <<= 8;
-    id |= str[3];
-    id <<= 8;
-    id |= str[4];
+	/* wait until the transmission data register is empty */
+	while (!i2c_flag_get(I2C0, I2C_FLAG_TBE)) {
+		__NOP();
+		tout++;
+		if (tout > 5000) {
+			i2c_flag_clear(I2C0, I2C_FLAG_TBE);
+			return 0;
+		}
+	}
+	tout = 0;
 
-    /* initialize transmit message */
-    g_transmit_message.tx_sfid = id;
-    g_transmit_message.tx_efid = id;
-    g_transmit_message.tx_ft = str[5] ? CAN_FT_REMOTE : CAN_FT_DATA;
-    g_transmit_message.tx_ff = str[6] ? CAN_FF_EXTENDED : CAN_FF_STANDARD;
-    g_transmit_message.tx_dlen = str[8];
+	for (int i = 0; i < dlen; i++) {
+		/* send a data byte */
+		i2c_data_transmit(I2C0, dta[i]);
+		/* wait until the transmission data register is empty */
+		while (!i2c_flag_get(I2C0, I2C_FLAG_TBE)) {
+			__NOP();
+			tout++;
+			if(tout > 5000) {
+				i2c_flag_clear(I2C0, I2C_FLAG_TBE);
+				return 0;
+			}
+		}
+		tout = 0;
+	}
 
-    for (int i = 0; i < str[8]; i++) {
-        g_transmit_message.tx_data[i] = str[9 + i];
-    }
+	/* the master doesn't acknowledge for the last byte */
+	while (!i2c_flag_get(I2C0, I2C_FLAG_AERR)) {
+		__NOP();
+		tout++;
+		if (tout > 5000) {
+			i2c_flag_clear(I2C0, I2C_FLAG_AERR);
+			return 0;
+		}
+	}
+	/* clear the bit of AERR */
+	i2c_flag_clear(I2C0, I2C_FLAG_AERR);
 
-    can_message_transmit(can_periph, &g_transmit_message);
+	return dlen;
+}
+
+
+void
+CANX_Send_From_I2C(uint32_t can_periph, uint8_t *str)
+{
+	uint32_t id = 0;
+
+	id |= str[1];
+	id <<= 8;
+	id |= str[2];
+	id <<= 8;
+	id |= str[3];
+	id <<= 8;
+	id |= str[4];
+
+	/* initialize transmit message */
+	g_transmit_message.tx_sfid = id;
+	g_transmit_message.tx_efid = id;
+	g_transmit_message.tx_ft = str[5] ? CAN_FT_REMOTE : CAN_FT_DATA;
+	g_transmit_message.tx_ff = str[6] ? CAN_FF_EXTENDED : CAN_FF_STANDARD;
+	g_transmit_message.tx_dlen = str[8];
+	for (int i = 0; i < str[8]; i++) {
+		g_transmit_message.tx_data[i] = str[9 + i];
+	}
+
+	can_message_transmit(can_periph, &g_transmit_message);
 }
 
 /* XXX just working out the indentation to make main() more readable for now. */
-void i2c_loop(unsigned char *, unsigned char *);
+void i2c_loop(uint8_t *, uint8_t *);
 
 void
 setup_serial(void)
@@ -320,8 +324,8 @@ main(void)
 	can_struct_para_init(CAN_RX_MESSAGE_STRUCT, &g_receive_message0);
 	can_struct_para_init(CAN_RX_MESSAGE_STRUCT, &g_receive_message1);
 
-	unsigned char i2cDtaFromRP2040[CANCONFIG_SIZE];
-	unsigned char dtaSendToRP2040[100] = {0};
+	uint8_t i2cDtaFromRP2040[CANCONFIG_SIZE];
+	uint8_t dtaSendToRP2040[100] = {0};
 
 	while(1) {
 		i2c_loop(&i2cDtaFromRP2040[0], &dtaSendToRP2040[0]);
@@ -339,7 +343,7 @@ main(void)
 }
 
 void
-i2c_loop(unsigned char *i2cDtaFromRP2040, unsigned char *dtaSendToRP2040)
+i2c_loop(uint8_t *i2cDtaFromRP2040, uint8_t *dtaSendToRP2040)
 {
 	int len = geti2cDta(i2cDtaFromRP2040);
 	int i;
@@ -458,16 +462,16 @@ i2c_loop(unsigned char *i2cDtaFromRP2040, unsigned char *dtaSendToRP2040)
 		can1_buffer_index = CAN1_NUM_BUFF_MSGS = 0;
 		break;
 	case CAN0_SLEEP:
-		can_sleep_mode(CAN0);
+		can_working_mode_set(CAN0, CAN_MODE_SLEEP);
 		break;
 	case CAN1_SLEEP:
-		can_sleep_mode(CAN1);
+		can_working_mode_set(CAN1, CAN_MODE_SLEEP);
 		break;
 	case CAN0_WAKE:
-		can_awake(CAN0);
+		can_working_mode_set(CAN0, CAN_MODE_SLEEP);
 		break;
 	case CAN1_WAKE:
-		can_awake(CAN1);
+		can_working_mode_set(CAN1, CAN_MODE_SLEEP);
 		break;
 	default:
 		break;
