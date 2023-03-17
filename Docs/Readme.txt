@@ -1,5 +1,10 @@
 # Working description
 
+## Building the project (on ie. rpi4)
+
+This should do from the root:
+ $ mkdir build && cd build && cmake .. && make -j4
+
 
 ## Initialization
 

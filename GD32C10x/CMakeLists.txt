@@ -1,0 +1,14 @@
+include_directories(
+	${PROJECT_SOURCE_DIR}/GD32C10x/CMSIS
+	${PROJECT_SOURCE_DIR}/GD32C10x/Peripherals/inc
+	${PROJECT_SOURCE_DIR}/inc
+)
+
+file(GLOB CMSIS_SRC ${PROJECT_SOURCE_DIR}/GD32C10x/CMSIS/*.c)
+file(GLOB PERIP_SRC ${PROJECT_SOURCE_DIR}/GD32C10x/Peripherals/src/*.c)
+
+add_library(gd32c10x
+	${PROJECT_SOURCE_DIR}/GD32C10x/CMSIS/startup_gd32c10x.S
+	${CMSIS_SRC}
+	${PERIP_SRC}
+)

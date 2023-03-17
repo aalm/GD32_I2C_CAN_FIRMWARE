@@ -11,9 +11,9 @@ Since the GD32E103 and GD32C103 are pin to pin compatible, these codes will work
 
 ## Development environment and tools
 
-This project is compiled with Keil 5.37, ARMCLANG >= 6.18.
+This project is compiled with GCC 8.3.1 arm-none-eabi.
 
-Simulation tools can use ST-Link or JLink.
+Simulation tools can use JLink or something SWD-compatible.
 
 ## Main differences from Longan implementation
 
@@ -26,7 +26,7 @@ Simulation tools can use ST-Link or JLink.
 
 ## Respository Contents
 
-* Keil project
+* minimal project configured using cmake
 
 
 ## License

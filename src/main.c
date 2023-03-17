@@ -120,7 +120,6 @@ int
 geti2cDta(uint8_t *dta)
 {
 	int len = 0;
-	uint32_t tout = 0;
 
 	if (!i2c_flag_get(I2C0, I2C_FLAG_ADDSEND)) {
 		return len;
@@ -130,7 +129,6 @@ geti2cDta(uint8_t *dta)
 
 	while (!i2c_flag_get(I2C0, I2C_FLAG_RBNE))
 		continue;
-	tout = 0;
 
 	while (i2c_flag_get(I2C0, I2C_FLAG_RBNE)) {
 		dta[len++] = i2c_data_receive(I2C0);
@@ -476,4 +474,12 @@ int fputc(int ch, FILE *f)
 	return ch;
 }
 #endif
+#endif
+
+#if 0 /* currently irrelevant, but necessary for --specs=nano.specs */
+void
+_exit(int st)
+{
+	while (1);
+}
 #endif

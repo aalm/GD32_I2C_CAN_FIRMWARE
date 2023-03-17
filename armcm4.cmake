@@ -1,0 +1,36 @@
+set(MCPU_FLAGS "-mthumb -mcpu=cortex-m4")
+set(VFP_FLAGS "-mfloat-abi=softfp -mfpu=fpv4-sp-d16")
+
+set(CMAKE_SYSTEM_NAME Generic)
+set(CMAKE_SYSTEM_PROCESSOR arm)
+set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+
+set(TARGET_TRIPLET "arm-none-eabi-")
+set(CMAKE_C_COMPILER    ${TARGET_TRIPLET}gcc)
+set(CMAKE_CXX_COMPILER  ${TARGET_TRIPLET}g++)
+set(CMAKE_ASM_COMPILER  ${TARGET_TRIPLET}gcc)
+set(CMAKE_LINKER        ${TARGET_TRIPLET}gcc)
+set(CMAKE_SIZE          ${TARGET_TRIPLET}size)
+set(CMAKE_OBJCOPY       ${TARGET_TRIPLET}objcopy)
+set(CMAKE_OBJDUMP       ${TARGET_TRIPLET}objdump)
+
+set(COMMON_CMAKE_FLAGS_00   "-g3 -ffunction-sections -fdata-sections")
+set(COMMON_CMAKE_FLAGS_01   "-fno-strict-aliasing -fno-builtin -fno-common")
+set(COMMON_CMAKE_FLAGS_02   "-Wall -Wshadow -Wdouble-promotion -Werror")
+set(CMAKE_COMMON_FLAGS      "${COMMON_CMAKE_FLAGS_00} ${COMMON_CMAKE_FLAGS_01} ${COMMON_CMAKE_FLAGS_02}")
+
+set(CMAKE_C_FLAGS           "${MCPU_FLAGS} ${VFP_FLAGS} ${CMAKE_COMMON_FLAGS}")
+set(CMAKE_CXX_FLAGS         "${MCPU_FLAGS} ${VFP_FLAGS} ${CMAKE_COMMON_FLAGS}")
+set(CMAKE_ASM_FLAGS         "${MCPU_FLAGS} ${VFP_FLAGS} ${CMAKE_COMMON_FLAGS}")
+#set(CMAKE_EXE_LINKER_FLAGS  "${LD_FLAGS} --specs=nano.specs -Wl,--gc-sections,-print-memory-usage")
+set(CMAKE_EXE_LINKER_FLAGS  "${LD_FLAGS} --specs=nosys.specs -Wl,--gc-sections,-print-memory-usage")
+
+set(CMAKE_C_FLAGS_DEBUG             "-O0")
+set(CMAKE_CXX_ASM_FLAGS_DEBUG       "-O0")
+set(CMAKE_ASM_FLAGS_DEBUG           "")
+set(CMAKE_EXE_LINKER_FLAGS_DEBUG    "")
+
+set(CMAKE_C_FLAGS_RELEASE           "-Os -flto")
+set(CMAKE_CXX_FLAGS_RELEASE         "-Os -flto")
+set(CMAKE_ASM_FLAGS_RELEASE         "")
+set(CMAKE_EXE_LINKER_FLAGS_RELEASE  "-flto")
