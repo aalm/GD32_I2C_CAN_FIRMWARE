@@ -15,7 +15,7 @@
 #include "systick.h"
 #include "dual_dfs.h"
 
-#if DEBUG /* XXX idk about this... */
+#if DEBUG /* XXX requires customizing the board, which I'm not going to do. */
 #define CANFW_DBG
 #endif
 
@@ -48,73 +48,36 @@ long2char(uint32_t __t, uint8_t *str)
 }
 
 void
-canSaveData(uint32_t can_periph)
+savecandata(uint32_t canp)
 {
+	int *canbc = canp == CAN0 ? &CAN0_NUM_BUFF_MSGS : &CAN1_NUM_BUFF_MSGS;
+	int *canbi = canp == CAN0 ? &can0_buffer_index : &can1_buffer_index;
 	uint32_t id = 0;
+	can_receive_message_struct *canrm;
+	uint8_t *candb;
 
-	if (CAN0 == can_periph) {
-		can0_buffer_index++;
-		if (can0_buffer_index > (MAX_CAN_RECV - 1)) {
-			can0_buffer_index = 0;
-		}
+	*canbi = *canbi + 1 > (MAX_CAN_RECV - 1) ? 0 : *canbi + 1;
+	candb = canp == CAN0 ? &CAN0_DATA_BUFFER[*canbi][0] : &CAN1_DATA_BUFFER[*canbi][0];
 
-		if (g_receive_message0.rx_ff == CAN_FF_EXTENDED) {
-			id = g_receive_message0.rx_efid;
-			CAN0_DATA_BUFFER[can0_buffer_index][4] = 1;
-		} else {
-			id = g_receive_message0.rx_sfid;
-			CAN0_DATA_BUFFER[can0_buffer_index][4] = 0;
-		}
-
-		long2char(id, &CAN0_DATA_BUFFER[can0_buffer_index][0]);
-
-		CAN0_DATA_BUFFER[can0_buffer_index][5] = (g_receive_message0.rx_ft == CAN_FT_REMOTE) ? 1 : 0;
-		CAN0_DATA_BUFFER[can0_buffer_index][7] = g_receive_message0.rx_dlen;
-
-		for (int i = 0; i < CAN0_DATA_BUFFER[can0_buffer_index][7]; i++) {
-			CAN0_DATA_BUFFER[can0_buffer_index][8 + i] = g_receive_message0.rx_data[i];
-		}
-
-		CAN0_NUM_BUFF_MSGS++;
-		if (CAN0_NUM_BUFF_MSGS > MAX_CAN_RECV) {
-#if DEBUG
-			printf("CAN0 message buffer is full.\n");
-#endif
-			CAN0_NUM_BUFF_MSGS = MAX_CAN_RECV;
-		}
+	canrm = canp == CAN0 ? &g_receive_message0 : &g_receive_message1;
+	if (canrm->rx_ff == CAN_FF_EXTENDED) {
+		id = canrm->rx_efid;
+		candb[4] = 1;
 	} else {
-		can1_buffer_index++;
-		if (can1_buffer_index > (MAX_CAN_RECV - 1)) {
-			can1_buffer_index = 0;
-		}
-
-		if (g_receive_message1.rx_ff == CAN_FF_EXTENDED) {
-			id = g_receive_message1.rx_efid;
-			CAN1_DATA_BUFFER[can1_buffer_index][4] = 1;
-		} else {
-			id = g_receive_message1.rx_sfid;
-			CAN1_DATA_BUFFER[can1_buffer_index][4] = 0;
-		}
-
-		long2char(id, &CAN1_DATA_BUFFER[can1_buffer_index][0]);
-
-		CAN1_DATA_BUFFER[can1_buffer_index][5] = (g_receive_message1.rx_ft == CAN_FT_REMOTE) ? 1 : 0;
-		CAN1_DATA_BUFFER[can1_buffer_index][7] = g_receive_message1.rx_dlen;
-
-		for (int i = 0; i < CAN1_DATA_BUFFER[can1_buffer_index][7]; i++) {
-			CAN1_DATA_BUFFER[can1_buffer_index][8 + i] = g_receive_message1.rx_data[i];
-		}
-
-		CAN1_NUM_BUFF_MSGS++;
-		if (CAN1_NUM_BUFF_MSGS > MAX_CAN_RECV) {
-#if DEBUG
-			printf("CAN1 message buffer is full.\n");
-#endif
-			CAN1_NUM_BUFF_MSGS = MAX_CAN_RECV;
-		}
+		id = canrm->rx_sfid;
+		candb[4] = 0;
 	}
-}
+	long2char(id, candb);
 
+	candb[5] = (canrm->rx_ft == CAN_FT_REMOTE) ? 1 : 0;
+	candb[7] = canrm->rx_dlen;
+
+	for (int i = 0; i < candb[7]; i++) {
+		candb[8 + i] = canrm->rx_data[i];
+	}
+
+	*canbc = *canbc + 1 > MAX_CAN_RECV ? MAX_CAN_RECV : *canbc + 1;
+}
 
 int
 geti2cDta(uint8_t *dta)
@@ -122,94 +85,78 @@ geti2cDta(uint8_t *dta)
 	int len = 0;
 
 	if (!i2c_flag_get(I2C0, I2C_FLAG_ADDSEND)) {
-		return len;
+		return 0;
 	}
-
 	i2c_flag_clear(I2C0, I2C_FLAG_ADDSEND);
 
+	/* wait for data */
 	while (!i2c_flag_get(I2C0, I2C_FLAG_RBNE))
 		continue;
-
 	while (i2c_flag_get(I2C0, I2C_FLAG_RBNE)) {
 		dta[len++] = i2c_data_receive(I2C0);
+		/* XXX is this really necessary? */
 		for (int i = 0; i < 3000; i++) {
 			__NOP();
 		}
 
-		if (len > 73) { /* XXX ??? */
-			//i2c_flag_clear(I2C0, I2C_FLAG_RBNE);
+		if (len > 73) { /* XXX ??? some limitation from arduino? */
+			/*i2c_flag_clear(I2C0, I2C_FLAG_RBNE);*/
 			return 0;
 		}
 	}
 
+	/* wait for stop */
 	while (!i2c_flag_get(I2C0, I2C_FLAG_STPDET))
 		continue;
 
-	i2c_enable(I2C0);
+	i2c_enable(I2C0); /* XXX necessary ? */
 	return len;
 }
 
+static inline int
+wait_i2c_flag(i2c_flag_enum flag, int clear_it)
+{
+	uint32_t tout = 0;
+
+	while (!i2c_flag_get(I2C0, flag)) {
+		__NOP();
+		tout++;
+		if (tout > 5000) {
+			i2c_flag_clear(I2C0, flag);
+			return 0;
+		}
+	}
+	if (clear_it)
+		i2c_flag_clear(I2C0, flag);
+
+	return 1;
+}
 
 int
 sendi2cDta(uint8_t *dta, int dlen)
 {
-	uint32_t tout = 0;
-	/* wait until ADDSEND bit is set */
-	while (!i2c_flag_get(I2C0, I2C_FLAG_ADDSEND)) {
-		__NOP();
-		tout++;
-		if (tout > 5000) {
-			//i2c_config();
-			i2c_flag_clear(I2C0, I2C_FLAG_ADDSEND);
-			return 0;
-		}
-	}
-	tout = 0;
-
-	/* clear ADDSEND bit */
-	i2c_flag_clear(I2C0, I2C_FLAG_ADDSEND);
+	/* wait until ADDSEND bit is set, and clear it */
+	if (!wait_i2c_flag(I2C_FLAG_ADDSEND, 1))
+		return 0;
 
 	/* wait until the transmission data register is empty */
-	while (!i2c_flag_get(I2C0, I2C_FLAG_TBE)) {
-		__NOP();
-		tout++;
-		if (tout > 5000) {
-			i2c_flag_clear(I2C0, I2C_FLAG_TBE);
-			return 0;
-		}
-	}
-	tout = 0;
+	if (!wait_i2c_flag(I2C_FLAG_TBE, 0))
+		return 0;
 
 	for (int i = 0; i < dlen; i++) {
 		/* send a data byte */
 		i2c_data_transmit(I2C0, dta[i]);
 		/* wait until the transmission data register is empty */
-		while (!i2c_flag_get(I2C0, I2C_FLAG_TBE)) {
-			__NOP();
-			tout++;
-			if(tout > 5000) {
-				i2c_flag_clear(I2C0, I2C_FLAG_TBE);
-				return 0;
-			}
-		}
-		tout = 0;
+		if (!wait_i2c_flag(I2C_FLAG_TBE, 0))
+			return 0;
 	}
 
-	/* the master doesn't acknowledge for the last byte */
-	while (!i2c_flag_get(I2C0, I2C_FLAG_AERR)) {
-		__NOP();
-		tout++;
-		if (tout > 5000) {
-			i2c_flag_clear(I2C0, I2C_FLAG_AERR);
-			return 0;
-		}
-	}
-	/* clear the bit of AERR */
-	i2c_flag_clear(I2C0, I2C_FLAG_AERR);
+	/* the master doesn't acknowledge for the last byte, clear AERR */
+	if (!wait_i2c_flag(I2C_FLAG_AERR, 1))
+		return 0;
 
 	return dlen;
 }
-
 
 void
 CANX_Send_From_I2C(uint32_t can_periph, uint8_t *str)
@@ -243,6 +190,7 @@ void i2c_loop(uint8_t *, uint8_t *);
 void
 setup_serial(void)
 {
+/* XXX provide a "printf" w/infinite loop, and get the error msg via SWD ? */
 #ifdef CANFW_DBG
 	nvic_irq_enable(USART0_IRQn, 2, 2);
 
@@ -299,7 +247,6 @@ main(void)
 	printf("I2C0 initialized @ %d MHz.\n", I2C_SPEED / 1000);
 #endif
 
-
 	uint8_t i2cDtaFromRP2040[CANCONFIG_SIZE];
 	uint8_t dtaSendToRP2040[100] = {0};
 
@@ -309,11 +256,11 @@ main(void)
 		/* ISR set FIFO not empty flag for CAN0. Buffer the message data. */
 		if (flgCAN0Get) {
 			flgCAN0Get = 0;
-			canSaveData(CAN0);
+			savecandata(CAN0);
 		}
 		if (flgCAN1Get) {
 			flgCAN1Get = 0;
-			canSaveData(CAN1);
+			savecandata(CAN1);
 		}
 		if (dbgpingpong) {
 			dbgpingpong++;
