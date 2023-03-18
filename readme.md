@@ -11,7 +11,8 @@ Since the GD32E103 and GD32C103 are pin to pin compatible, these codes will work
 
 ## Development environment and tools
 
-This project is compiled with GCC 8.3.1 arm-none-eabi.
+This project is compiled with Keil 5.37 and ARMCLANG >= 6.18,
+or CMake >= 3.20 and GCC 8.3.1 arm-none-eabi.
 
 Simulation tools can use JLink or something SWD-compatible.
 
@@ -26,7 +27,7 @@ Simulation tools can use JLink or something SWD-compatible.
 
 ## Respository Contents
 
-* minimal project configured using cmake
+* Keil project for windows, and cmake/gcc for linux.
 
 
 ## License
