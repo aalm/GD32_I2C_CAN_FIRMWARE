@@ -331,7 +331,6 @@ canaddr_recv2(uint32_t cp, uint8_t *dtaSendToRP2040)
 		sendi2cDta(dtaSendToRP2040, cdb[7] - 32);
 		cbi--;
 		*canbi = cbi < 0 ? MAX_CAN_RECV - 1 : cbi;
-		*canbc = *canbc - 1;
 		*canbc = cbc - 1;
 	}
 }
