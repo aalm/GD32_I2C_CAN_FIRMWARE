@@ -217,6 +217,8 @@ setup_serial(void)
 }
 
 static uint8_t dbgpingpong = 0;
+static uint8_t dbgpingpongn = 0;
+static uint8_t dbgpingpongs = 0;
 
 int
 main(void)
@@ -262,13 +264,16 @@ main(void)
 			flgCAN1Get = 0;
 			savecandata(CAN1);
 		}
-		if (dbgpingpong) {
-			dbgpingpong++;
-			if (sendi2cDta(&dbgpingpong, 1) == 1) {
-				dbgpingpong = 0;
-			} else
-				dbgpingpong--;
-		}
+
+		if (dbgpingpongn == dbgpingpongs)
+			continue;
+		if (dbgpingpongn > dbgpingpongs)
+			printf("got pingpong %u %u\n", dbgpingpong, dbgpingpongn);
+		else
+		if (dbgpingpongn < dbgpingpongs)
+			printf("err pingpong %u %u %u\n",
+				dbgpingpong, dbgpingpongn, dbgpingpongs);
+		dbgpingpongs = dbgpingpongn;
 	}
 }
 
@@ -403,6 +408,10 @@ i2c_loop(uint8_t *i2cDtaFromRP2040, uint8_t *dtaSendToRP2040)
 		break;
 	case DBG_PINGPONG:
 		dbgpingpong = i2cDtaFromRP2040[1];
+		if (dbgpingpong > 0)
+			dbgpingpong++;
+		if (sendi2cDta(&dbgpingpong, 1) == 1)
+			dbgpingpongn++;
 		break;
 	default:
 		break;
