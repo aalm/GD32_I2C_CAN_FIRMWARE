@@ -88,6 +88,7 @@ geti2cDta(uint8_t *dta)
 		return 0;
 	}
 	i2c_flag_clear(I2C0, I2C_FLAG_ADDSEND);
+printf("geti2cDta flag_addsend\r\n");
 
 	/* wait for data */
 	while (!i2c_flag_get(I2C0, I2C_FLAG_RBNE))
