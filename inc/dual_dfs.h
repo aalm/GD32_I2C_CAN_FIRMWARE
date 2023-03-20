@@ -1,10 +1,7 @@
 #ifndef __DUAL_DFS_H__
 #define __DUAL_DFS_H__
 
-
 #define CANCONFIG_SIZE		8 + 14 * 10	/* 14 filters per peripheral. I.e 14 for CAN0, 14 for CAN1. */
-#define UNDERCLOCK		1		/* Sets MCU speed to 48MHz to save power. */
-#define DEBUG			0		/* Enable/disable serial debug messages. */
 /* Maximum number of messages to be buffered. For 100ms cycle times, this gives 1s lead time. */
 #define MAX_CAN_RECV		10
 

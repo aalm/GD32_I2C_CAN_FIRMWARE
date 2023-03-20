@@ -190,8 +190,6 @@ void i2c_loop(uint8_t *, uint8_t *);
 void
 setup_serial(void)
 {
-/* XXX provide a "printf" w/infinite loop, and get the error msg via SWD ? */
-#ifdef CANFW_DBG
 	nvic_irq_enable(USART0_IRQn, 2, 2);
 
 	/* enable GPIO clock */
@@ -213,7 +211,6 @@ setup_serial(void)
 	usart_enable(USART0);
 
 	usart_interrupt_enable(USART0, USART_INT_RBNE);
-#endif
 }
 
 static uint8_t dbgpingpong = 0;
@@ -232,6 +229,8 @@ main(void)
 
 	setup_serial();
 
+	printf("gd32e103 yay\n");
+
 	/* CAN configure */
 	can_gpio_config();
 
@@ -242,10 +241,6 @@ main(void)
 	/* I2C configure */
 	i2c_gpio_config();
 	i2c_config();
-
-#ifdef CANFW_DBG
-	printf("I2C0 initialized @ %d MHz.\n", I2C_SPEED / 1000);
-#endif
 
 	uint8_t i2cDtaFromRP2040[CANCONFIG_SIZE];
 	uint8_t dtaSendToRP2040[100] = {0};
@@ -335,7 +330,7 @@ i2c_loop(uint8_t *i2cDtaFromRP2040, uint8_t *dtaSendToRP2040)
 
 	if (len < 1)
 		return;
-
+	printf("i2c_loop %d %x\n", len, i2cDtaFromRP2040[0]);
 	switch (i2cDtaFromRP2040[0]) {
 /* CAN data functions */
 	case CAN0_SEND_MSG:
@@ -406,8 +401,7 @@ i2c_loop(uint8_t *i2cDtaFromRP2040, uint8_t *dtaSendToRP2040)
 	}
 }
 
-#if /* XXX */0
-#ifdef CANFW_DBG
+#if /* XXX */1
 /* retarget the C library printf function to the usart */
 int fputc(int ch, FILE *f)
 {
@@ -415,7 +409,6 @@ int fputc(int ch, FILE *f)
 	while (RESET == usart_flag_get(USART0, USART_FLAG_TBE));
 	return ch;
 }
-#endif
 #endif
 
 #if 0 /* currently irrelevant, but necessary for --specs=nano.specs */
