@@ -36,6 +36,13 @@ OF SUCH DAMAGE.
 
 #include "i2c.h"
 
+#define I2C_SCL_PIN             GPIO_PIN_6
+#define I2C_SDA_PIN             GPIO_PIN_7
+
+static uint8_t i2c_slaveaddr = 0x41;
+static uint32_t i2c_speed = 400000U;
+static uint32_t i2c_dutycycle = I2C_DTCY_16_9;
+
 /*!
     \brief      configure the GPIO ports
     \param[in]  none
@@ -46,8 +53,8 @@ void
 i2c_gpio_config(void)
 {
 	/* enable GPIO clock */
-	rcu_periph_clock_enable(RCU_GPIO_I2C);
-	gpio_init(I2C_PORT, GPIO_MODE_AF_OD, GPIO_OSPEED_50MHZ, I2C_SCL_PIN | I2C_SDA_PIN);
+	rcu_periph_clock_enable(RCU_GPIOB);
+	gpio_init(GPIOB, GPIO_MODE_AF_OD, GPIO_OSPEED_50MHZ, I2C_SCL_PIN | I2C_SDA_PIN);
 }
 
 /*!
@@ -57,14 +64,18 @@ i2c_gpio_config(void)
     \retval     none
 */
 void
-i2c_config(void)
+i2c_config(uint8_t slaveaddr, uint32_t speed, uint32_t dutycycle)
 {
+	i2c_slaveaddr = slaveaddr;
+	i2c_speed = speed;
+	i2c_dutycycle = dutycycle;
+
 	/* enable I2C clock */
-	rcu_periph_clock_enable(RCU_I2C);
+	rcu_periph_clock_enable(RCU_I2C0);
 	/* configure I2C clock */
-	i2c_clock_config(I2C0, I2C_SPEED, I2C_DTCY_2);
+	i2c_clock_config(I2C0, speed, dutycycle);
 	/* configure I2C address */
-	i2c_mode_addr_config(I2C0, I2C_I2CMODE_ENABLE, I2C_ADDFORMAT_7BITS, I2CX_SLAVE_ADDRESS7);
+	i2c_mode_addr_config(I2C0, I2C_I2CMODE_ENABLE, 0, slaveaddr);
 	/* enable I2C0 */
 	i2c_enable(I2C0);
 	/* enable acknowledge */
@@ -82,24 +93,24 @@ i2c_bus_reset(void)
 {
 	i2c_deinit(I2C0);
 	/* configure SDA/SCL for GPIO */
-	GPIO_BC(I2C_PORT) |= I2C_SCL_PIN;
-	GPIO_BC(I2C_PORT) |= I2C_SDA_PIN;
-	gpio_init(I2C_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, I2C_SCL_PIN | I2C_SDA_PIN);
+	GPIO_BC(GPIOB) |= I2C_SCL_PIN;
+	GPIO_BC(GPIOB) |= I2C_SDA_PIN;
+	gpio_init(GPIOB, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, I2C_SCL_PIN | I2C_SDA_PIN);
 	__NOP();
 	__NOP();
 	__NOP();
 	__NOP();
 	__NOP();
-	GPIO_BOP(I2C_PORT) |= I2C_SCL_PIN;
+	GPIO_BOP(GPIOB) |= I2C_SCL_PIN;
 	__NOP();
 	__NOP();
 	__NOP();
 	__NOP();
 	__NOP();
-	GPIO_BOP(I2C_PORT) |= I2C_SDA_PIN;
+	GPIO_BOP(GPIOB) |= I2C_SDA_PIN;
 	/* connect I2C_SCL_GPIO_PIN to I2C_SCL */
 	/* connect I2C_SDA_GPIO_PIN to I2C_SDA */
-	gpio_init(I2C_PORT, GPIO_MODE_AF_OD, GPIO_OSPEED_50MHZ, I2C_SCL_PIN | I2C_SDA_PIN);
+	gpio_init(GPIOB, GPIO_MODE_AF_OD, GPIO_OSPEED_50MHZ, I2C_SCL_PIN | I2C_SDA_PIN);
 	/* configure the I2CX interface */
-	i2c_config();
+	i2c_config(i2c_slaveaddr, i2c_speed, i2c_dutycycle);
 }

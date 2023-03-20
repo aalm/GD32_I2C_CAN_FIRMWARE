@@ -15,9 +15,6 @@
 #include "systick.h"
 #include "dual_dfs.h"
 
-#if DEBUG /* XXX requires customizing the board, which I'm not going to do. */
-#define CANFW_DBG
-#endif
 
 int flgCAN0Get = 0;
 int flgCAN1Get = 0;
@@ -219,6 +216,8 @@ static uint8_t dbgpingpong = 0;
 int
 main(void)
 {
+	uint32_t i2c_spd = 400000U;
+	uint32_t i2c_duc = I2C_DTCY_16_9;
 	/* configure board */
 	systick_config();
 
@@ -229,8 +228,36 @@ main(void)
 	rcu_periph_clock_enable(RCU_GPIOD);
 
 	setup_serial();
+delay_1ms(5000);
+	/* I2C configure */
+	i2c_gpio_config();
 
-	printf("gd32e103 yay\n");
+	static uint32_t cfgs[5][2] = {
+		{ 1000000U, I2C_DTCY_16_9 },
+		{ 1000000U, I2C_DTCY_2 },
+		{ 400000U, I2C_DTCY_16_9 },
+		{ 400000U, I2C_DTCY_2 },
+		{ 100000U, I2C_DTCY_2 }
+	};
+	uint32_t dbgcnt = 0;
+	int cfgindex = 0;
+i2cdbgloop:
+	i2c_spd = cfgs[cfgindex][0];
+	i2c_duc = cfgs[cfgindex][1];
+	i2c_config(0x41, i2c_spd, i2c_duc);
+	printf("gd32e103 i2c cfg %u %s\n", i2c_spd, i2c_duc ? "16/9" : "/2");
+	for (int i = 0; i < 10; i++) {
+		if (wait_i2c_flag(I2C_FLAG_ADDSEND, 0))
+			break;
+		delay_1ms(5);
+	}
+	if (wait_i2c_flag(I2C_FLAG_ADDSEND, 0) == 0) {
+		cfgindex++;
+		if (cfgindex < 5)
+			goto i2cdbgloop;
+		printf("gd32e103 i2c failure...\r\n")
+	} else
+		printf("gd32e103 got addressed on i2c bus\r\n");
 
 	/* CAN configure */
 	can_gpio_config();
@@ -238,10 +265,6 @@ main(void)
 	/* initialize receive message */
 	can_struct_para_init(CAN_RX_MESSAGE_STRUCT, &g_receive_message0);
 	can_struct_para_init(CAN_RX_MESSAGE_STRUCT, &g_receive_message1);
-
-	/* I2C configure */
-	i2c_gpio_config();
-	i2c_config();
 
 	uint8_t i2cDtaFromRP2040[CANCONFIG_SIZE];
 	uint8_t dtaSendToRP2040[100] = {0};
